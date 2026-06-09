@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+:root {
+  --room-bg: #0f172a;
+  --room-accent: #1e293b;
+  --page-inset: 12px;
+  --stand-chrome: 24px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --page-inset: 16px;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: radial-gradient(ellipse at 50% 0%, #1e3a5f 0%, var(--room-bg) 55%);
+  color: #e2e8f0;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
