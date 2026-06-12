@@ -1,5 +1,6 @@
 "use client";
 
+import { Palette, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { exportFishDrawing } from "@/lib/exportFishDrawing";
 import { floodFill } from "@/lib/floodFill";
@@ -83,7 +84,6 @@ export function DrawingCanvas({ onClose, onFishSaved }: DrawingCanvasProps) {
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
 
   const updateStrokeColor = useCallback((color: string) => {
     strokeColorRef.current = color;
@@ -102,7 +102,6 @@ export function DrawingCanvas({ onClose, onFishSaved }: DrawingCanvasProps) {
 
   const openSaveModal = useCallback(() => {
     setSaveError(null);
-    setSaveSuccessMessage(null);
     setIsSaveModalOpen(true);
   }, []);
 
@@ -110,7 +109,6 @@ export function DrawingCanvas({ onClose, onFishSaved }: DrawingCanvasProps) {
     if (isSaving) return;
     setIsSaveModalOpen(false);
     setSaveError(null);
-    setSaveSuccessMessage(null);
   }, [isSaving]);
 
   const handleSaveFish = useCallback(async (name: string) => {
@@ -144,14 +142,14 @@ export function DrawingCanvas({ onClose, onFishSaved }: DrawingCanvasProps) {
         return;
       }
 
-      setSaveSuccessMessage(`Pez guardado como ${data.fileName}.png`);
       onFishSaved?.();
+      onClose();
     } catch {
       setSaveError("No se pudo guardar el pez.");
     } finally {
       setIsSaving(false);
     }
-  }, [onFishSaved]);
+  }, [onClose, onFishSaved]);
 
   const setupCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -174,20 +172,6 @@ export function DrawingCanvas({ onClose, onFishSaved }: DrawingCanvasProps) {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, rect.width, rect.height);
   }, []);
-
-  const clearCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.save();
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.restore();
-    setupCanvas();
-  }, [setupCanvas]);
 
   const getContext = useCallback(() => {
     const canvas = canvasRef.current;
@@ -414,18 +398,26 @@ export function DrawingCanvas({ onClose, onFishSaved }: DrawingCanvasProps) {
     >
       <div className={styles.dialog}>
         <div className={styles.header}>
-          <h2 className={styles.title}>Dibujar</h2>
-          <div className={styles.actions}>
-            <button type="button" className={styles.actionButton} onClick={clearCanvas}>
-              Limpiar
-            </button>
-            <button type="button" className={styles.actionButton} onClick={openSaveModal}>
-              Guardar
-            </button>
-            <button type="button" className={styles.actionButton} onClick={onClose}>
-              Cerrar
-            </button>
+          <div className={styles.headerText}>
+            <div className={styles.titleRow}>
+              <span className={styles.titleIcon}>
+                <Palette size={18} strokeWidth={2} aria-hidden="true" />
+              </span>
+              <h2 className={styles.title}>Crea tu pez</h2>
+            </div>
+            <p className={styles.subtitle}>
+              Dibuja tu pez y suéltalo en el acuario cuando lo guardes.
+            </p>
           </div>
+          <button
+            type="button"
+            className={styles.closeButton}
+            aria-label="Cerrar"
+            title="Cerrar"
+            onClick={onClose}
+          >
+            <X size={22} strokeWidth={2.5} aria-hidden="true" />
+          </button>
         </div>
 
         <PaintPanel
@@ -435,32 +427,32 @@ export function DrawingCanvas({ onClose, onFishSaved }: DrawingCanvasProps) {
           onColorChange={updateStrokeColor}
           onToolChange={updateTool}
           onBrushSizeChange={updateBrushSize}
+          onSave={openSaveModal}
         />
 
         <div className={styles.canvasWrap}>
-          <canvas
-            ref={canvasRef}
-            className={`${styles.canvas} ${
-              tool === "eraser"
-                ? styles.canvasEraser
-                : tool === "bucket"
-                  ? styles.canvasBucket
-                  : styles.canvasBrush
-            }`}
-            aria-label="Área de dibujo"
-          />
+          <div className={styles.screen}>
+            <div className={styles.canvasFrame}>
+              <canvas
+                ref={canvasRef}
+                className={`${styles.canvas} ${
+                  tool === "eraser"
+                    ? styles.canvasEraser
+                    : tool === "bucket"
+                      ? styles.canvasBucket
+                      : styles.canvasBrush
+                }`}
+                aria-label="Área de dibujo"
+              />
+            </div>
+          </div>
         </div>
-
-        <p className={styles.hint}>
-          Usa lápiz, tarro o borrador. Al guardar, solo se exporta lo dibujado como tu pez.
-        </p>
       </div>
 
       {isSaveModalOpen ? (
         <SaveFishModal
           isSaving={isSaving}
           error={saveError}
-          successMessage={saveSuccessMessage}
           onSave={handleSaveFish}
           onClose={closeSaveModal}
         />

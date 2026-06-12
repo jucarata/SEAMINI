@@ -1,5 +1,6 @@
 "use client";
 
+import { Fish } from "lucide-react";
 import { useEffect, useState } from "react";
 import { sanitizeFishName } from "@/lib/sanitizeFishName";
 import styles from "./SaveFishModal.module.css";
@@ -7,18 +8,11 @@ import styles from "./SaveFishModal.module.css";
 type SaveFishModalProps = {
   isSaving: boolean;
   error: string | null;
-  successMessage: string | null;
   onSave: (name: string) => void;
   onClose: () => void;
 };
 
-export function SaveFishModal({
-  isSaving,
-  error,
-  successMessage,
-  onSave,
-  onClose,
-}: SaveFishModalProps) {
+export function SaveFishModal({ isSaving, error, onSave, onClose }: SaveFishModalProps) {
   const [name, setName] = useState("");
   const sanitizedName = sanitizeFishName(name);
 
@@ -35,7 +29,7 @@ export function SaveFishModal({
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!sanitizedName || isSaving || successMessage) return;
+    if (!sanitizedName || isSaving) return;
     onSave(name.trim());
   };
 
@@ -52,10 +46,17 @@ export function SaveFishModal({
       }}
     >
       <form className={styles.dialog} onSubmit={handleSubmit}>
-        <h3 className={styles.title}>Guardar pez</h3>
-        <p className={styles.description}>
-          Solo se exportará lo dibujado, sin el fondo blanco. El pez se guardará como imagen PNG.
-        </p>
+        <div className={styles.header}>
+          <div className={styles.headerIcon}>
+            <Fish size={20} strokeWidth={2} aria-hidden="true" />
+          </div>
+          <div className={styles.headerText}>
+            <h3 className={styles.title}>Guardar pez</h3>
+            <p className={styles.description}>
+              Ponle un nombre y lo soltaremos en tu acuario.
+            </p>
+          </div>
+        </div>
 
         <label className={styles.field}>
           <span className={styles.label}>Nombre del pez</span>
@@ -65,38 +66,30 @@ export function SaveFishModal({
             value={name}
             placeholder="Ej: Nemo"
             autoFocus
-            disabled={isSaving || Boolean(successMessage)}
+            disabled={isSaving}
             onChange={(event) => setName(event.target.value)}
           />
         </label>
 
         {sanitizedName ? (
           <p className={styles.filePreview}>
-            Archivo: <strong>{sanitizedName}.png</strong>
+            Se guardará como <strong>{sanitizedName}.png</strong>
           </p>
         ) : null}
 
         {error ? <p className={styles.error}>{error}</p> : null}
-        {successMessage ? <p className={styles.success}>{successMessage}</p> : null}
 
         <div className={styles.actions}>
-          <button
-            type="button"
-            className={styles.button}
-            disabled={isSaving}
-            onClick={onClose}
-          >
-            {successMessage ? "Cerrar" : "Cancelar"}
+          <button type="button" className={styles.button} disabled={isSaving} onClick={onClose}>
+            Cancelar
           </button>
-          {!successMessage ? (
-            <button
-              type="submit"
-              className={styles.buttonPrimary}
-              disabled={!sanitizedName || isSaving}
-            >
-              {isSaving ? "Guardando..." : "Guardar"}
-            </button>
-          ) : null}
+          <button
+            type="submit"
+            className={styles.buttonPrimary}
+            disabled={!sanitizedName || isSaving}
+          >
+            {isSaving ? "Guardando..." : "Guardar"}
+          </button>
         </div>
       </form>
     </div>

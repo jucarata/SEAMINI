@@ -19,6 +19,7 @@ type PaintPanelProps = {
   onColorChange: (color: string) => void;
   onToolChange: (tool: DrawingTool) => void;
   onBrushSizeChange: (size: number) => void;
+  onSave: () => void;
 };
 
 function normalizeColor(color: string) {
@@ -39,6 +40,7 @@ export function PaintPanel({
   onColorChange,
   onToolChange,
   onBrushSizeChange,
+  onSave,
 }: PaintPanelProps) {
   const [recentColors, setRecentColors] = useState<string[]>([]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -214,6 +216,12 @@ export function PaintPanel({
             })}
           </div>
         ) : null}
+      </div>
+
+      <div className={styles.panelActions}>
+        <button type="button" className={styles.saveButton} onClick={onSave}>
+          Guardar pez
+        </button>
       </div>
     </div>
   );

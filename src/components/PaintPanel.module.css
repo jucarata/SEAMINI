@@ -8,6 +8,46 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
+.panelActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.saveButton {
+  padding: 8px 14px;
+  border: 1px solid #0284c7;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #38bdf8 0%, #0ea5e9 100%);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 3px rgba(14, 165, 233, 0.35);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.saveButton:hover {
+  background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 100%);
+  border-color: #0369a1;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 2px 6px rgba(14, 165, 233, 0.4);
+}
+
+.saveButton:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .toolGroup {
   display: flex;
   align-items: center;
