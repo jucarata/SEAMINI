@@ -1,12 +1,13 @@
 import { listFish, revokeFishUrls } from "@/lib/fishStore";
+import { publicPath } from "@/lib/publicPath";
 import Phaser from "phaser";
 
 const GAME_ASSETS = [
-  { key: "simple-rock-1", path: "/assets/rocks/simple-rock-1.png" },
-  { key: "simple-seaweed-1", path: "/assets/seaweed/simple-seaweed-1.png" },
-  { key: "simple-seaweed-2", path: "/assets/seaweed/simple-seaweed-2.png" },
-  { key: "simple-seaweed-3", path: "/assets/seaweed/simple-seaweed-3.png" },
-  { key: "simple-seaweed-4", path: "/assets/seaweed/simple-seaweed-4.png" },
+  { key: "simple-rock-1", path: publicPath("/assets/rocks/simple-rock-1.png") },
+  { key: "simple-seaweed-1", path: publicPath("/assets/seaweed/simple-seaweed-1.png") },
+  { key: "simple-seaweed-2", path: publicPath("/assets/seaweed/simple-seaweed-2.png") },
+  { key: "simple-seaweed-3", path: publicPath("/assets/seaweed/simple-seaweed-3.png") },
+  { key: "simple-seaweed-4", path: publicPath("/assets/seaweed/simple-seaweed-4.png") },
 ] as const;
 
 type FishAsset = {
