@@ -1,62 +1,98 @@
 import Phaser from "phaser";
 
-export type FishSwimmer = {
-  sprite: Phaser.GameObjects.Image;
-  speed: number;
-  direction: 1 | -1;
+type SwimBounds = {
   minX: number;
   maxX: number;
-  baseY: number;
+  minY: number;
+  maxY: number;
+};
+
+export type FishSwimmer = {
+  sprite: Phaser.GameObjects.Image;
+  vx: number;
+  vy: number;
+  cruiseSpeed: number;
+  bounds: SwimBounds;
+  targetX: number;
+  targetY: number;
+  radius: number;
   wobbleOffset: number;
   wobbleSpeed: number;
   wobbleAmplitude: number;
+  pickTarget: () => void;
 };
 
-export function createFishSwimmers(scene: Phaser.Scene, layout: {
-  width: number;
-  height: number;
-  waterHeight: number;
-  surfaceHeight: number;
-  sandY: number;
-}): FishSwimmer[] {
+const BASE_DEPTH = 10;
+const TARGET_REACH = 24;
+const STEERING = 0.045;
+const SEPARATION_STRENGTH = 18;
+
+export function createFishSwimmers(
+  scene: Phaser.Scene,
+  layout: {
+    width: number;
+    height: number;
+    waterHeight: number;
+    surfaceHeight: number;
+    sandY: number;
+  },
+): FishSwimmer[] {
   const fishKeys = scene.registry.get("fishTextureKeys") as string[] | undefined;
   if (!fishKeys?.length) return [];
 
   const swimmers: FishSwimmer[] = [];
-  const marginX = layout.width * 0.08;
+  const marginX = layout.width * 0.06;
+
+  const bounds: SwimBounds = {
+    minX: marginX,
+    maxX: layout.width - marginX,
+    minY: layout.surfaceHeight + layout.waterHeight * 0.08,
+    maxY: layout.sandY - layout.height * 0.05,
+  };
 
   fishKeys.forEach((textureKey, index) => {
     if (!scene.textures.exists(textureKey)) return;
 
     const seed = index + 1;
     const rand = mulberry32(8800 + seed * 131);
-    const minY = layout.surfaceHeight + layout.waterHeight * 0.1;
-    const maxY = layout.sandY - layout.height * 0.06;
     const targetWidth = layout.width * (0.07 + rand() * 0.05);
 
     const fish = scene.add.image(0, 0, textureKey);
     fish.setOrigin(0.5, 0.5);
     fish.setDisplaySize(targetWidth, (fish.height / fish.width) * targetWidth);
-    fish.setDepth(10);
+    fish.setDepth(BASE_DEPTH);
 
-    const direction: 1 | -1 = rand() > 0.5 ? 1 : -1;
-    fish.setFlipX(direction < 0);
-
-    const startX = marginX + rand() * (layout.width - marginX * 2);
-    const startY = minY + rand() * Math.max(1, maxY - minY);
+    const startX = bounds.minX + rand() * (bounds.maxX - bounds.minX);
+    const startY = bounds.minY + rand() * (bounds.maxY - bounds.minY);
     fish.setPosition(startX, startY);
 
-    swimmers.push({
+    const swimmer: FishSwimmer = {
       sprite: fish,
-      speed: 28 + rand() * 42,
-      direction,
-      minX: marginX,
-      maxX: layout.width - marginX,
-      baseY: startY,
+      vx: 0,
+      vy: 0,
+      cruiseSpeed: 34 + rand() * 38,
+      bounds,
+      targetX: startX,
+      targetY: startY,
+      radius: Math.max(14, targetWidth * 0.42),
       wobbleOffset: rand() * Math.PI * 2,
-      wobbleSpeed: 0.0012 + rand() * 0.0018,
-      wobbleAmplitude: 4 + rand() * 8,
-    });
+      wobbleSpeed: 0.0014 + rand() * 0.0016,
+      wobbleAmplitude: 2 + rand() * 4,
+      pickTarget: () => {},
+    };
+
+    swimmer.pickTarget = () => {
+      swimmer.targetX = bounds.minX + rand() * (bounds.maxX - bounds.minX);
+      swimmer.targetY = bounds.minY + rand() * (bounds.maxY - bounds.minY);
+    };
+
+    swimmer.pickTarget();
+
+    const initialAngle = rand() * Math.PI * 2;
+    swimmer.vx = Math.cos(initialAngle) * swimmer.cruiseSpeed * 0.6;
+    swimmer.vy = Math.sin(initialAngle) * swimmer.cruiseSpeed * 0.6;
+
+    swimmers.push(swimmer);
   });
 
   return swimmers;
@@ -66,23 +102,96 @@ export function updateFishSwimmers(swimmers: FishSwimmer[], time: number, delta:
   const deltaSeconds = delta / 1000;
 
   for (const swimmer of swimmers) {
-    const { sprite } = swimmer;
-    sprite.x += swimmer.speed * swimmer.direction * deltaSeconds;
+    updateSwimmerTarget(swimmer);
+    applySteering(swimmer, swimmers);
+    integrateSwimmer(swimmer, time, deltaSeconds);
+    updateSwimmerDepth(swimmer);
+  }
+}
 
-    if (sprite.x >= swimmer.maxX) {
-      sprite.x = swimmer.maxX;
-      swimmer.direction = -1;
-      sprite.setFlipX(true);
-    } else if (sprite.x <= swimmer.minX) {
-      sprite.x = swimmer.minX;
-      swimmer.direction = 1;
-      sprite.setFlipX(false);
+function updateSwimmerTarget(swimmer: FishSwimmer) {
+  const dx = swimmer.targetX - swimmer.sprite.x;
+  const dy = swimmer.targetY - swimmer.sprite.y;
+  const distance = Math.hypot(dx, dy);
+
+  if (distance < TARGET_REACH) {
+    swimmer.pickTarget();
+  }
+}
+
+function applySteering(swimmer: FishSwimmer, swimmers: FishSwimmer[]) {
+  const dx = swimmer.targetX - swimmer.sprite.x;
+  const dy = swimmer.targetY - swimmer.sprite.y;
+  const distance = Math.max(0.001, Math.hypot(dx, dy));
+
+  let desiredVx = (dx / distance) * swimmer.cruiseSpeed;
+  let desiredVy = (dy / distance) * swimmer.cruiseSpeed;
+
+  for (const other of swimmers) {
+    if (other === swimmer) continue;
+
+    const offsetX = swimmer.sprite.x - other.sprite.x;
+    const offsetY = swimmer.sprite.y - other.sprite.y;
+    const separationDistance = Math.hypot(offsetX, offsetY);
+    const minDistance = swimmer.radius + other.radius;
+
+    if (separationDistance <= 0 || separationDistance >= minDistance) {
+      continue;
     }
 
-    sprite.y =
-      swimmer.baseY +
-      Math.sin(time * swimmer.wobbleSpeed + swimmer.wobbleOffset) * swimmer.wobbleAmplitude;
+    const pushStrength =
+      ((minDistance - separationDistance) / minDistance) * SEPARATION_STRENGTH;
+
+    desiredVx += (offsetX / separationDistance) * pushStrength;
+    desiredVy += (offsetY / separationDistance) * pushStrength;
   }
+
+  swimmer.vx += (desiredVx - swimmer.vx) * STEERING;
+  swimmer.vy += (desiredVy - swimmer.vy) * STEERING;
+
+  const speed = Math.hypot(swimmer.vx, swimmer.vy);
+  const maxSpeed = swimmer.cruiseSpeed * 1.15;
+
+  if (speed > maxSpeed) {
+    swimmer.vx = (swimmer.vx / speed) * maxSpeed;
+    swimmer.vy = (swimmer.vy / speed) * maxSpeed;
+  }
+}
+
+function integrateSwimmer(swimmer: FishSwimmer, time: number, deltaSeconds: number) {
+  const { sprite, bounds } = swimmer;
+  const wobble = Math.sin(time * swimmer.wobbleSpeed + swimmer.wobbleOffset) * swimmer.wobbleAmplitude;
+
+  sprite.x += swimmer.vx * deltaSeconds;
+  sprite.y += swimmer.vy * deltaSeconds + wobble * deltaSeconds * 18;
+
+  if (sprite.x < bounds.minX) {
+    sprite.x = bounds.minX;
+    swimmer.vx = Math.abs(swimmer.vx);
+    swimmer.pickTarget();
+  } else if (sprite.x > bounds.maxX) {
+    sprite.x = bounds.maxX;
+    swimmer.vx = -Math.abs(swimmer.vx);
+    swimmer.pickTarget();
+  }
+
+  if (sprite.y < bounds.minY) {
+    sprite.y = bounds.minY;
+    swimmer.vy = Math.abs(swimmer.vy) * 0.6;
+    swimmer.pickTarget();
+  } else if (sprite.y > bounds.maxY) {
+    sprite.y = bounds.maxY;
+    swimmer.vy = -Math.abs(swimmer.vy) * 0.6;
+    swimmer.pickTarget();
+  }
+
+  if (Math.abs(swimmer.vx) > 4) {
+    sprite.setFlipX(swimmer.vx < 0);
+  }
+}
+
+function updateSwimmerDepth(swimmer: FishSwimmer) {
+  swimmer.sprite.setDepth(BASE_DEPTH + swimmer.sprite.y * 0.02);
 }
 
 function mulberry32(seed: number) {
