@@ -5,6 +5,8 @@
   --room-accent: #1e293b;
   --page-inset: 12px;
   --stand-chrome: 24px;
+  --toolbar-height: 56px;
+  --toolbar-shell-height: calc(var(--toolbar-height) + 10px);
 }
 
 @media (min-width: 640px) {

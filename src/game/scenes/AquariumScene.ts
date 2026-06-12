@@ -72,6 +72,69 @@ const ROCK_PLACEMENTS = [
   },
 ] as const;
 
+const SEAWEED_PLACEMENTS = [
+  {
+    key: "simple-seaweed-1",
+    xFactor: 0.248,
+    widthFactor: 0.055,
+    heightFactor: 0.28,
+    originY: 0.98,
+    sandDepth: 0.08,
+    yOffset: 0,
+    rotation: -0.14,
+  },
+  {
+    key: "simple-seaweed-2",
+    xFactor: 0.262,
+    widthFactor: 0.042,
+    heightFactor: 0.22,
+    originY: 0.98,
+    sandDepth: 0.1,
+    yOffset: -2,
+    rotation: 0.12,
+  },
+  {
+    key: "simple-seaweed-4",
+    xFactor: 0.254,
+    widthFactor: 0.088,
+    heightFactor: 0.14,
+    originY: 0.98,
+    sandDepth: 0.12,
+    yOffset: 1,
+    rotation: -0.06,
+  },
+  {
+    key: "simple-seaweed-3",
+    xFactor: 0.848,
+    widthFactor: 0.05,
+    heightFactor: 0.25,
+    originY: 0.98,
+    sandDepth: 0.08,
+    yOffset: 0,
+    rotation: 0.16,
+  },
+  {
+    key: "simple-seaweed-2",
+    xFactor: 0.862,
+    widthFactor: 0.038,
+    heightFactor: 0.19,
+    originY: 0.98,
+    sandDepth: 0.11,
+    yOffset: -2,
+    rotation: -0.1,
+  },
+  {
+    key: "simple-seaweed-4",
+    xFactor: 0.855,
+    widthFactor: 0.08,
+    heightFactor: 0.13,
+    originY: 0.98,
+    sandDepth: 0.13,
+    yOffset: 2,
+    rotation: 0.08,
+  },
+] as const;
+
 export class AquariumScene extends Phaser.Scene {
   private rippleGraphics?: Phaser.GameObjects.Graphics;
   private surfaceWaveGraphics?: Phaser.GameObjects.Graphics;
@@ -307,48 +370,37 @@ export class AquariumScene extends Phaser.Scene {
   }
 
   private drawSeaweed(layout: TankLayout) {
-    const strands = [
-      { x: layout.width * 0.24, height: layout.height * 0.28, lean: 18 },
-      { x: layout.width * 0.31, height: layout.height * 0.22, lean: -12 },
-      { x: layout.width * 0.86, height: layout.height * 0.25, lean: -20 },
-      { x: layout.width * 0.91, height: layout.height * 0.18, lean: 10 },
-    ];
+    for (const seaweed of SEAWEED_PLACEMENTS) {
+      const groundY = layout.sandY + layout.sandHeight * seaweed.sandDepth + seaweed.yOffset;
 
-    for (const strand of strands) {
-      this.drawSeaweedStrand(strand.x, layout.sandY, strand.height, strand.lean);
+      this.placeSeaweed(
+        seaweed.key,
+        layout.width * seaweed.xFactor,
+        groundY,
+        layout.width * seaweed.widthFactor,
+        layout.height * seaweed.heightFactor,
+        seaweed.originY,
+        seaweed.rotation,
+      );
     }
   }
 
-  private drawSeaweedStrand(baseX: number, baseY: number, strandHeight: number, lean: number) {
-    const strand = this.add.graphics().setDepth(5);
-    const segments = 8;
-    const points: Phaser.Math.Vector2[] = [];
+  private placeSeaweed(
+    textureKey: string,
+    x: number,
+    groundY: number,
+    displayWidth: number,
+    displayHeight: number,
+    originY: number,
+    rotation: number,
+  ) {
+    if (!this.textures.exists(textureKey)) return;
 
-    for (let i = 0; i <= segments; i += 1) {
-      const t = i / segments;
-      const sway = Math.sin(t * Math.PI * 1.4) * lean;
-      points.push(new Phaser.Math.Vector2(baseX + sway * t, baseY - strandHeight * t));
-    }
-
-    strand.lineStyle(5, 0x166534, 0.85);
-    strand.beginPath();
-    strand.moveTo(points[0].x, points[0].y);
-    for (let i = 1; i < points.length; i += 1) {
-      const prev = points[i - 1];
-      const curr = points[i];
-      const cpx = (prev.x + curr.x) / 2 + lean * 0.08;
-      const cpy = (prev.y + curr.y) / 2;
-      strand.lineTo(cpx, cpy);
-    }
-    strand.strokePath();
-
-    strand.lineStyle(2, 0x4ade80, 0.35);
-    strand.beginPath();
-    strand.moveTo(points[0].x - 2, points[0].y);
-    for (let i = 1; i < points.length; i += 1) {
-      strand.lineTo(points[i].x - 2, points[i].y);
-    }
-    strand.strokePath();
+    const seaweed = this.add.image(x, groundY, textureKey);
+    seaweed.setOrigin(0.5, originY);
+    seaweed.setDisplaySize(displayWidth, displayHeight);
+    seaweed.setRotation(rotation);
+    seaweed.setDepth(5);
   }
 
   private drawSuspendedParticles(layout: TankLayout) {

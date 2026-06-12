@@ -1,0 +1,177 @@
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 240px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  box-shadow:
+    0 16px 40px rgba(15, 23, 42, 0.28),
+    0 2px 8px rgba(15, 23, 42, 0.12);
+}
+
+.svArea {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.svOverlayWhite {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, #ffffff, rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.svOverlayBlack {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, #000000, rgba(0, 0, 0, 0));
+  pointer-events: none;
+}
+
+.svPointer {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.controlsRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.preview {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(15, 23, 42, 0.2);
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.hueSlider {
+  position: relative;
+  flex: 1;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #ff0000,
+    #ffff00,
+    #00ff00,
+    #00ffff,
+    #0000ff,
+    #ff00ff,
+    #ff0000
+  );
+  cursor: pointer;
+  touch-action: none;
+}
+
+.hueThumb {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.rgbRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.rgbField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rgbLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748b;
+  text-align: center;
+}
+
+.rgbInput {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.rgbInput:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 1px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.cancelButton,
+.acceptButton {
+  padding: 7px 12px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.cancelButton {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+}
+
+.cancelButton:hover {
+  background: #f1f5f9;
+}
+
+.acceptButton {
+  border: 1px solid #0284c7;
+  background: #0ea5e9;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.acceptButton:hover {
+  background: #0284c7;
+}
+
+.cancelButton:focus-visible,
+.acceptButton:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}

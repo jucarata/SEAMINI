@@ -1,12 +1,31 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type Phaser from "phaser";
+import { DrawingCanvas } from "./DrawingCanvas";
+import { ToolPanel, type Tool } from "./ToolPanel";
 import styles from "./Aquarium.module.css";
 
 export function Aquarium() {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
+  const [selectedTool, setSelectedTool] = useState<Tool>("cursor");
+  const [isDrawingOpen, setIsDrawingOpen] = useState(false);
+
+  const handleSelectTool = (tool: Tool) => {
+    if (tool === "draw") {
+      setIsDrawingOpen(true);
+      return;
+    }
+
+    setSelectedTool(tool);
+    setIsDrawingOpen(false);
+  };
+
+  const handleCloseDrawing = () => {
+    setIsDrawingOpen(false);
+    setSelectedTool("cursor");
+  };
 
   useEffect(() => {
     const parent = containerRef.current;
@@ -33,7 +52,13 @@ export function Aquarium() {
 
   return (
     <div className={styles.wrapper} aria-label="Pecera vacía">
+      <ToolPanel
+        selectedTool={selectedTool}
+        isDrawingOpen={isDrawingOpen}
+        onSelectTool={handleSelectTool}
+      />
       <div ref={containerRef} className={styles.gameContainer} />
+      {isDrawingOpen ? <DrawingCanvas onClose={handleCloseDrawing} /> : null}
     </div>
   );
 }
