@@ -1,3 +1,4 @@
+import { listFish, revokeFishUrls } from "@/lib/fishStore";
 import Phaser from "phaser";
 
 const GAME_ASSETS = [
@@ -32,9 +33,7 @@ export class BootScene extends Phaser.Scene {
     let fish: FishAsset[] = [];
 
     try {
-      const response = await fetch("/api/fish");
-      const data = (await response.json()) as { fish?: FishAsset[] };
-      fish = data.fish ?? [];
+      fish = await listFish();
     } catch {
       fish = [];
     }
@@ -45,20 +44,24 @@ export class BootScene extends Phaser.Scene {
       return;
     }
 
-    const cacheBust = Date.now();
+    try {
+      for (const asset of fish) {
+        this.load.image(`fish-${asset.fileName}`, asset.url);
+      }
 
-    for (const asset of fish) {
-      this.load.image(`fish-${asset.fileName}`, `${asset.url}?v=${cacheBust}`);
-    }
+      await new Promise<void>((resolve) => {
+        this.load.once(Phaser.Loader.Events.COMPLETE, () => resolve());
+        this.load.start();
+      });
 
-    this.load.once(Phaser.Loader.Events.COMPLETE, () => {
       this.registry.set(
         "fishTextureKeys",
         fish.map((asset) => `fish-${asset.fileName}`),
       );
-      this.scene.start("AquariumScene");
-    });
+    } finally {
+      revokeFishUrls(fish);
+    }
 
-    this.load.start();
+    this.scene.start("AquariumScene");
   }
 }

@@ -72,3 +72,9 @@
 .toolButtonActive .toolIcon {
   color: #7dd3fc;
 }
+
+.toolButtonDanger:hover {
+  background: rgba(127, 29, 29, 0.45);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fca5a5;
+}

@@ -40,6 +40,18 @@ export function Aquarium() {
     setFishReloadKey((current) => current + 1);
   };
 
+  const handleClearAllFish = () => {
+    void (async () => {
+      try {
+        const { clearAllFish } = await import("@/lib/fishStore");
+        await clearAllFish();
+        setFishReloadKey((current) => current + 1);
+      } catch {
+        // Botón de prueba: fallo silencioso.
+      }
+    })();
+  };
+
   useEffect(() => {
     const parent = containerRef.current;
     if (!parent) return;
@@ -74,6 +86,7 @@ export function Aquarium() {
         selectedTool={selectedTool}
         isDrawingOpen={isDrawingOpen}
         onSelectTool={handleSelectTool}
+        onClearAllFish={handleClearAllFish}
       />
       <div ref={containerRef} className={styles.gameContainer} />
       {isDrawingOpen ? (

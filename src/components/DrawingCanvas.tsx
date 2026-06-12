@@ -125,27 +125,12 @@ export function DrawingCanvas({ onClose, onFishSaved }: DrawingCanvasProps) {
     setSaveError(null);
 
     try {
-      const response = await fetch("/api/fish", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, image }),
-      });
-
-      const data = (await response.json()) as {
-        error?: string;
-        fileName?: string;
-        url?: string;
-      };
-
-      if (!response.ok) {
-        setSaveError(data.error ?? "No se pudo guardar el pez.");
-        return;
-      }
-
+      const { saveFish } = await import("@/lib/fishStore");
+      await saveFish(name, image);
       onFishSaved?.();
       onClose();
-    } catch {
-      setSaveError("No se pudo guardar el pez.");
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "No se pudo guardar el pez.");
     } finally {
       setIsSaving(false);
     }
