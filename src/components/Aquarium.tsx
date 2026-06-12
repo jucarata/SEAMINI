@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type Phaser from "phaser";
+import { FISH_SELECTED_EVENT, type FishSelectedDetail } from "@/lib/fishEvents";
+import { getFish, revokeFishUrls, type StoredFish } from "@/lib/fishStore";
 import { DrawingCanvas } from "./DrawingCanvas";
+import { FishDetailModal } from "./FishDetailModal";
 import { ToolPanel, type Tool } from "./ToolPanel";
 import styles from "./Aquarium.module.css";
 
@@ -11,11 +14,12 @@ export function Aquarium() {
   const gameRef = useRef<Phaser.Game | null>(null);
   const [selectedTool, setSelectedTool] = useState<Tool>("cursor");
   const [isDrawingOpen, setIsDrawingOpen] = useState(false);
+  const [selectedFish, setSelectedFish] = useState<StoredFish | null>(null);
 
   const [fishReloadKey, setFishReloadKey] = useState(0);
   const dragEnabledRef = useRef(true);
 
-  dragEnabledRef.current = selectedTool === "cursor" && !isDrawingOpen;
+  dragEnabledRef.current = selectedTool === "cursor" && !isDrawingOpen && selectedFish === null;
 
   const syncFishDragEnabled = (game: Phaser.Game | null) => {
     game?.registry.set("fishDragEnabled", dragEnabledRef.current);
@@ -39,6 +43,15 @@ export function Aquarium() {
   const handleFishSaved = () => {
     setFishReloadKey((current) => current + 1);
   };
+
+  const handleCloseFishDetail = useCallback(() => {
+    setSelectedFish((current) => {
+      if (current) {
+        revokeFishUrls([current]);
+      }
+      return null;
+    });
+  }, []);
 
   const handleClearAllFish = () => {
     void (async () => {
@@ -78,7 +91,43 @@ export function Aquarium() {
 
   useEffect(() => {
     syncFishDragEnabled(gameRef.current);
-  }, [selectedTool, isDrawingOpen]);
+  }, [selectedTool, isDrawingOpen, selectedFish]);
+
+  useEffect(() => {
+    const handleFishSelected = (event: Event) => {
+      const { fileName } = (event as CustomEvent<FishSelectedDetail>).detail;
+
+      void (async () => {
+        try {
+          const fish = await getFish(fileName);
+          if (!fish) return;
+
+          setSelectedFish((current) => {
+            if (current) {
+              revokeFishUrls([current]);
+            }
+            return fish;
+          });
+        } catch {
+          // Fallo silencioso al abrir el detalle.
+        }
+      })();
+    };
+
+    window.addEventListener(FISH_SELECTED_EVENT, handleFishSelected);
+    return () => window.removeEventListener(FISH_SELECTED_EVENT, handleFishSelected);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      setSelectedFish((current) => {
+        if (current) {
+          revokeFishUrls([current]);
+        }
+        return null;
+      });
+    };
+  }, []);
 
   return (
     <div className={styles.wrapper} aria-label="Pecera vacía">
@@ -92,6 +141,7 @@ export function Aquarium() {
       {isDrawingOpen ? (
         <DrawingCanvas onClose={handleCloseDrawing} onFishSaved={handleFishSaved} />
       ) : null}
+      {selectedFish ? <FishDetailModal fish={selectedFish} onClose={handleCloseFishDetail} /> : null}
     </div>
   );
 }

@@ -7,18 +7,38 @@ const PNG_DATA_URL_PREFIX = "data:image/png;base64,";
 
 export type StoredFish = {
   fileName: string;
+  name: string;
+  level: number;
+  xp: number;
   url: string;
 };
 
 export type SaveFishResult = {
   fileName: string;
+  name: string;
+  level: number;
+  xp: number;
 };
 
 type FishRecord = {
   fileName: string;
+  name: string;
+  level: number;
+  xp: number;
   blob: Blob;
   updatedAt: number;
 };
+
+function normalizeFishRecord(record: Partial<FishRecord> & Pick<FishRecord, "fileName" | "blob">): FishRecord {
+  return {
+    fileName: record.fileName,
+    name: record.name ?? record.fileName,
+    level: record.level ?? 0,
+    xp: record.xp ?? 0,
+    blob: record.blob,
+    updatedAt: record.updatedAt ?? 0,
+  };
+}
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -57,6 +77,36 @@ export function revokeFishUrls(fish: StoredFish[]): void {
   }
 }
 
+export async function getFish(fileName: string): Promise<StoredFish | null> {
+  const db = await openDb();
+
+  try {
+    const record = await new Promise<FishRecord | undefined>((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, "readonly");
+      const request = transaction.objectStore(STORE_NAME).get(fileName);
+
+      request.onerror = () => reject(request.error ?? new Error("No se pudo leer el pez."));
+      request.onsuccess = () => {
+        const raw = request.result as (Partial<FishRecord> & Pick<FishRecord, "fileName" | "blob">) | undefined;
+        resolve(raw ? normalizeFishRecord(raw) : undefined);
+      };
+    });
+
+    if (!record) return null;
+
+    const { name, level, xp, blob } = record;
+    return {
+      fileName,
+      name,
+      level,
+      xp,
+      url: URL.createObjectURL(blob),
+    };
+  } finally {
+    db.close();
+  }
+}
+
 export async function listFish(): Promise<StoredFish[]> {
   const db = await openDb();
 
@@ -66,13 +116,19 @@ export async function listFish(): Promise<StoredFish[]> {
       const request = transaction.objectStore(STORE_NAME).getAll();
 
       request.onerror = () => reject(request.error ?? new Error("No se pudieron leer los peces."));
-      request.onsuccess = () => resolve(request.result as FishRecord[]);
+      request.onsuccess = () => {
+        const raw = request.result as Array<Partial<FishRecord> & Pick<FishRecord, "fileName" | "blob">>;
+        resolve(raw.map(normalizeFishRecord));
+      };
     });
 
     return records
       .sort((left, right) => left.fileName.localeCompare(right.fileName))
-      .map(({ fileName, blob }) => ({
+      .map(({ fileName, name, level, xp, blob }) => ({
         fileName,
+        name,
+        level,
+        xp,
         url: URL.createObjectURL(blob),
       }));
   } finally {
@@ -81,7 +137,8 @@ export async function listFish(): Promise<StoredFish[]> {
 }
 
 export async function saveFish(name: string, imageDataUrl: string): Promise<SaveFishResult> {
-  const fileName = sanitizeFishName(name);
+  const displayName = name.trim();
+  const fileName = sanitizeFishName(displayName);
   if (!fileName) {
     throw new Error("Nombre inválido. Usa letras, números, guiones o guiones bajos.");
   }
@@ -95,16 +152,21 @@ export async function saveFish(name: string, imageDataUrl: string): Promise<Save
     throw new Error("La imagen está vacía.");
   }
 
+  const record: FishRecord = {
+    fileName,
+    name: displayName,
+    level: 0,
+    xp: 0,
+    blob,
+    updatedAt: Date.now(),
+  };
+
   const db = await openDb();
 
   try {
     await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, "readwrite");
-      const request = transaction.objectStore(STORE_NAME).put({
-        fileName,
-        blob,
-        updatedAt: Date.now(),
-      } satisfies FishRecord);
+      const request = transaction.objectStore(STORE_NAME).put(record);
 
       request.onerror = () => reject(request.error ?? new Error("No se pudo guardar el pez."));
       transaction.oncomplete = () => resolve();
@@ -114,7 +176,12 @@ export async function saveFish(name: string, imageDataUrl: string): Promise<Save
     db.close();
   }
 
-  return { fileName };
+  return {
+    fileName: record.fileName,
+    name: record.name,
+    level: record.level,
+    xp: record.xp,
+  };
 }
 
 export async function clearAllFish(): Promise<void> {

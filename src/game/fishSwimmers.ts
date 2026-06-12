@@ -7,7 +7,12 @@ type SwimBounds = {
   maxY: number;
 };
 
+export function textureKeyToFileName(textureKey: string): string {
+  return textureKey.startsWith("fish-") ? textureKey.slice(5) : textureKey;
+}
+
 export type FishSwimmer = {
+  fileName: string;
   sprite: Phaser.GameObjects.Image;
   vx: number;
   vy: number;
@@ -68,6 +73,7 @@ export function createFishSwimmers(
     fish.setPosition(startX, startY);
 
     const swimmer: FishSwimmer = {
+      fileName: textureKeyToFileName(textureKey),
       sprite: fish,
       vx: 0,
       vy: 0,

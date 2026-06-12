@@ -1,3 +1,4 @@
+import { dispatchFishSelected } from "@/lib/fishEvents";
 import Phaser from "phaser";
 import {
   clampFishToBounds,
@@ -7,6 +8,7 @@ import {
 } from "./fishSwimmers";
 
 const DRAG_DEPTH = 50;
+const DRAG_THRESHOLD = 6;
 
 export type FishDragController = {
   reset: () => void;
@@ -50,6 +52,9 @@ export function bindFishDragControls(
   isEnabled: () => boolean,
 ): FishDragController {
   let dragged: FishSwimmer | null = null;
+  let pressed: FishSwimmer | null = null;
+  let pressX = 0;
+  let pressY = 0;
   let offsetX = 0;
   let offsetY = 0;
 
@@ -69,12 +74,7 @@ export function bindFishDragControls(
     );
   };
 
-  const onPointerDown = (pointer: Phaser.Input.Pointer) => {
-    if (!isEnabled() || !pointer.primaryDown) return;
-
-    const swimmer = findSwimmerAt(getSwimmers(), pointer.x, pointer.y);
-    if (!swimmer) return;
-
+  const startDrag = (swimmer: FishSwimmer, pointer: Phaser.Input.Pointer) => {
     dragged = swimmer;
     swimmer.isDragging = true;
     offsetX = swimmer.sprite.x - pointer.x;
@@ -86,7 +86,26 @@ export function bindFishDragControls(
     scene.input.setDefaultCursor("grabbing");
   };
 
+  const onPointerDown = (pointer: Phaser.Input.Pointer) => {
+    if (!isEnabled() || !pointer.primaryDown) return;
+
+    const swimmer = findSwimmerAt(getSwimmers(), pointer.x, pointer.y);
+    if (!swimmer) return;
+
+    pressed = swimmer;
+    pressX = pointer.x;
+    pressY = pointer.y;
+  };
+
   const onPointerMove = (pointer: Phaser.Input.Pointer) => {
+    if (pressed && !dragged) {
+      const distance = Math.hypot(pointer.x - pressX, pointer.y - pressY);
+      if (distance >= DRAG_THRESHOLD) {
+        startDrag(pressed, pointer);
+        pressed = null;
+      }
+    }
+
     if (dragged) {
       dragged.sprite.x = pointer.x + offsetX;
       dragged.sprite.y = pointer.y + offsetY;
@@ -99,11 +118,20 @@ export function bindFishDragControls(
   };
 
   const onPointerUp = () => {
-    if (!dragged) return;
+    if (dragged) {
+      const swimmer = dragged;
+      dragged = null;
+      releaseFishDrag(swimmer);
+      scene.input.setDefaultCursor("default");
+      pressed = null;
+      return;
+    }
 
-    const swimmer = dragged;
-    dragged = null;
-    releaseFishDrag(swimmer);
+    if (pressed) {
+      dispatchFishSelected(pressed.fileName);
+      pressed = null;
+    }
+
     scene.input.setDefaultCursor("default");
   };
 
@@ -117,6 +145,7 @@ export function bindFishDragControls(
       dragged = null;
     }
 
+    pressed = null;
     scene.input.setDefaultCursor("default");
   };
 
