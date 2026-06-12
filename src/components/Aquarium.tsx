@@ -12,6 +12,8 @@ export function Aquarium() {
   const [selectedTool, setSelectedTool] = useState<Tool>("cursor");
   const [isDrawingOpen, setIsDrawingOpen] = useState(false);
 
+  const [fishReloadKey, setFishReloadKey] = useState(0);
+
   const handleSelectTool = (tool: Tool) => {
     if (tool === "draw") {
       setIsDrawingOpen(true);
@@ -25,6 +27,10 @@ export function Aquarium() {
   const handleCloseDrawing = () => {
     setIsDrawingOpen(false);
     setSelectedTool("cursor");
+  };
+
+  const handleFishSaved = () => {
+    setFishReloadKey((current) => current + 1);
   };
 
   useEffect(() => {
@@ -48,7 +54,7 @@ export function Aquarium() {
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };
-  }, []);
+  }, [fishReloadKey]);
 
   return (
     <div className={styles.wrapper} aria-label="Pecera vacía">
@@ -58,7 +64,9 @@ export function Aquarium() {
         onSelectTool={handleSelectTool}
       />
       <div ref={containerRef} className={styles.gameContainer} />
-      {isDrawingOpen ? <DrawingCanvas onClose={handleCloseDrawing} /> : null}
+      {isDrawingOpen ? (
+        <DrawingCanvas onClose={handleCloseDrawing} onFishSaved={handleFishSaved} />
+      ) : null}
     </div>
   );
 }

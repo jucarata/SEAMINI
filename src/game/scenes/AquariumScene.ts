@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { createFishSwimmers, updateFishSwimmers, type FishSwimmer } from "../fishSwimmers";
 
 const STAND_BASE_HEIGHT = 14;
 const STAND_FEET_HEIGHT = 10;
@@ -144,6 +145,7 @@ export class AquariumScene extends Phaser.Scene {
   private layoutWidth = 0;
   private layoutHeight = 0;
   private tankLayout?: TankLayout;
+  private fishSwimmers: FishSwimmer[] = [];
 
   constructor() {
     super({ key: "AquariumScene" });
@@ -168,6 +170,7 @@ export class AquariumScene extends Phaser.Scene {
 
     this.drawRipple();
     this.drawSurfaceWaves();
+    updateFishSwimmers(this.fishSwimmers, _time, delta);
   }
 
   shutdown() {
@@ -208,6 +211,8 @@ export class AquariumScene extends Phaser.Scene {
 
     this.drawRipple();
     this.drawSurfaceWaves();
+
+    this.fishSwimmers = createFishSwimmers(this, layout);
 
     for (let i = 0; i < 5; i += 1) {
       this.time.delayedCall(i * 350, () => this.spawnBubble());

@@ -1,16 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { exportFishDrawing } from "@/lib/exportFishDrawing";
 import { floodFill } from "@/lib/floodFill";
 import {
   DEFAULT_BRUSH_SIZE,
   type DrawingTool,
   PaintPanel,
 } from "./PaintPanel";
+import { SaveFishModal } from "./SaveFishModal";
 import styles from "./DrawingCanvas.module.css";
 
 type DrawingCanvasProps = {
   onClose: () => void;
+  onFishSaved?: () => void;
 };
 
 type StrokePoint = {
@@ -64,7 +67,7 @@ function interpolatePoints(from: StrokePoint, to: StrokePoint, step = INTERPOLAT
   return points;
 }
 
-export function DrawingCanvas({ onClose }: DrawingCanvasProps) {
+export function DrawingCanvas({ onClose, onFishSaved }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const activePointerIdRef = useRef<number | null>(null);
@@ -77,6 +80,10 @@ export function DrawingCanvas({ onClose }: DrawingCanvasProps) {
   const [strokeColor, setStrokeColor] = useState(DEFAULT_STROKE_COLOR);
   const [tool, setTool] = useState<DrawingTool>("brush");
   const [brushSize, setBrushSize] = useState(DEFAULT_BRUSH_SIZE);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
 
   const updateStrokeColor = useCallback((color: string) => {
     strokeColorRef.current = color;
@@ -92,6 +99,59 @@ export function DrawingCanvas({ onClose }: DrawingCanvasProps) {
     brushSizeRef.current = size;
     setBrushSize(size);
   }, []);
+
+  const openSaveModal = useCallback(() => {
+    setSaveError(null);
+    setSaveSuccessMessage(null);
+    setIsSaveModalOpen(true);
+  }, []);
+
+  const closeSaveModal = useCallback(() => {
+    if (isSaving) return;
+    setIsSaveModalOpen(false);
+    setSaveError(null);
+    setSaveSuccessMessage(null);
+  }, [isSaving]);
+
+  const handleSaveFish = useCallback(async (name: string) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const image = exportFishDrawing(canvas);
+    if (!image) {
+      setSaveError("Dibuja tu pez antes de guardarlo.");
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    try {
+      const response = await fetch("/api/fish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, image }),
+      });
+
+      const data = (await response.json()) as {
+        error?: string;
+        fileName?: string;
+        url?: string;
+      };
+
+      if (!response.ok) {
+        setSaveError(data.error ?? "No se pudo guardar el pez.");
+        return;
+      }
+
+      setSaveSuccessMessage(`Pez guardado como ${data.fileName}.png`);
+      onFishSaved?.();
+    } catch {
+      setSaveError("No se pudo guardar el pez.");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [onFishSaved]);
 
   const setupCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -327,13 +387,18 @@ export function DrawingCanvas({ onClose }: DrawingCanvasProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (isSaveModalOpen) {
+          closeSaveModal();
+          return;
+        }
+
         onClose();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [closeSaveModal, isSaveModalOpen, onClose]);
 
   return (
     <div
@@ -353,6 +418,9 @@ export function DrawingCanvas({ onClose }: DrawingCanvasProps) {
           <div className={styles.actions}>
             <button type="button" className={styles.actionButton} onClick={clearCanvas}>
               Limpiar
+            </button>
+            <button type="button" className={styles.actionButton} onClick={openSaveModal}>
+              Guardar
             </button>
             <button type="button" className={styles.actionButton} onClick={onClose}>
               Cerrar
@@ -384,9 +452,19 @@ export function DrawingCanvas({ onClose }: DrawingCanvasProps) {
         </div>
 
         <p className={styles.hint}>
-          Usa lápiz, tarro o borrador. El tarro rellena áreas cerradas con un clic.
+          Usa lápiz, tarro o borrador. Al guardar, solo se exporta lo dibujado como tu pez.
         </p>
       </div>
+
+      {isSaveModalOpen ? (
+        <SaveFishModal
+          isSaving={isSaving}
+          error={saveError}
+          successMessage={saveSuccessMessage}
+          onSave={handleSaveFish}
+          onClose={closeSaveModal}
+        />
+      ) : null}
     </div>
   );
 }

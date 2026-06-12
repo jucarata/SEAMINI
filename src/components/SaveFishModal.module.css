@@ -1,0 +1,135 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--page-inset);
+  background: rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(4px);
+}
+
+.dialog {
+  width: min(360px, 100%);
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 38%),
+    linear-gradient(180deg, #243044 0%, #151c2b 100%);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+}
+
+.title {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.description {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.45;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #f8fafc;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.input:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 1px;
+}
+
+.filePreview {
+  margin: 0 0 12px;
+  font-size: 0.76rem;
+  color: #64748b;
+}
+
+.filePreview strong {
+  color: #94a3b8;
+}
+
+.error {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  color: #fca5a5;
+}
+
+.success {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  color: #86efac;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.button,
+.buttonPrimary {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.button {
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.65);
+  color: #cbd5e1;
+}
+
+.button:hover {
+  background: rgba(30, 41, 59, 0.9);
+}
+
+.buttonPrimary {
+  border: 1px solid #0284c7;
+  background: #0ea5e9;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.buttonPrimary:hover {
+  background: #0284c7;
+}
+
+.button:disabled,
+.buttonPrimary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.button:focus-visible,
+.buttonPrimary:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
