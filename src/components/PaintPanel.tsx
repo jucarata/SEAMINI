@@ -1,10 +1,11 @@
 "use client";
 
+import { Eraser, PaintBucket, Pencil } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ColorPickerPopover } from "./ColorPickerPopover";
 import styles from "./PaintPanel.module.css";
 
-export type DrawingTool = "brush" | "eraser";
+export type DrawingTool = "brush" | "eraser" | "bucket";
 
 const MAX_RECENT_COLORS = 5;
 export const MIN_BRUSH_SIZE = 2;
@@ -103,20 +104,18 @@ export function PaintPanel({
           title="Lápiz"
           onClick={() => onToolChange("brush")}
         >
-          <svg className={styles.toolIcon} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinejoin="round"
-            />
-            <path
-              d="m13.5 6.5 3 3"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
+          <Pencil className={styles.toolIcon} size={18} strokeWidth={2} aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className={`${styles.toolButton} ${tool === "bucket" ? styles.toolButtonActive : ""}`}
+          aria-label="Tarro de pintura"
+          aria-pressed={tool === "bucket"}
+          title="Tarro de pintura"
+          onClick={() => onToolChange("bucket")}
+        >
+          <PaintBucket className={styles.toolIcon} size={18} strokeWidth={2} aria-hidden="true" />
         </button>
 
         <button
@@ -127,24 +126,14 @@ export function PaintPanel({
           title="Borrador"
           onClick={() => onToolChange("eraser")}
         >
-          <svg className={styles.toolIcon} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <rect
-              x="6"
-              y="9.5"
-              width="12"
-              height="5.5"
-              rx="1.1"
-              ry="1.1"
-              fill="#ffffff"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              transform="rotate(-42 12 12)"
-            />
-          </svg>
+          <Eraser className={styles.toolIcon} size={18} strokeWidth={2} aria-hidden="true" />
         </button>
       </div>
 
-      <div className={styles.sizeGroup} aria-label="Grosor del trazo">
+      <div
+        className={`${styles.sizeGroup} ${tool === "bucket" ? styles.sizeGroupDisabled : ""}`}
+        aria-label="Grosor del trazo"
+      >
         <span className={styles.sizeLabel}>Grosor</span>
         <div
           className={styles.sizePreview}
@@ -161,6 +150,7 @@ export function PaintPanel({
           aria-valuemin={MIN_BRUSH_SIZE}
           aria-valuemax={MAX_BRUSH_SIZE}
           aria-valuenow={brushSize}
+          disabled={tool === "bucket"}
           onChange={(event) => onBrushSizeChange(Number(event.target.value))}
         />
         <span className={styles.sizeValue}>{brushSize}px</span>
@@ -194,7 +184,7 @@ export function PaintPanel({
             />
           </button>
 
-          {isPickerOpen && tool === "brush" ? (
+          {isPickerOpen && tool !== "eraser" ? (
             <ColorPickerPopover
               initialColor={color}
               onPreview={setPreviewColor}

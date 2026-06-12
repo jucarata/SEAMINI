@@ -1,5 +1,6 @@
 "use client";
 
+import { MousePointer2, Pencil } from "lucide-react";
 import styles from "./ToolPanel.module.css";
 
 export type Tool = "cursor" | "draw";
@@ -14,41 +15,12 @@ const TOOLS: ToolOption[] = [
   {
     id: "cursor",
     label: "Cursor",
-    icon: (
-      <svg
-        className={styles.cursorIcon}
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          d="M4.5 2.5v16.8l4.6-4 2.4 5.8 2.3-.9-2.3-5.5h4.2L4.5 2.5z"
-          fill="#ffffff"
-          stroke="#111111"
-          strokeWidth="1.4"
-          strokeLinejoin="round"
-        />
-      </svg>
-    ),
+    icon: <MousePointer2 className={styles.toolIcon} size={20} strokeWidth={2} aria-hidden="true" />,
   },
   {
     id: "draw",
     label: "Dibujar",
-    icon: (
-      <svg className={styles.icon} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path
-          d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinejoin="round"
-        />
-        <path
-          d="m13.5 6.5 3 3"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-        />
-      </svg>
-    ),
+    icon: <Pencil className={styles.toolIcon} size={20} strokeWidth={2} aria-hidden="true" />,
   },
 ];
 
@@ -64,7 +36,7 @@ export function ToolPanel({ selectedTool, isDrawingOpen, onSelectTool }: ToolPan
       <div className={styles.panel} role="toolbar" aria-label="Herramientas del acuario">
         {TOOLS.map((tool) => {
           const isActive =
-          selectedTool === tool.id || (tool.id === "draw" && isDrawingOpen);
+            selectedTool === tool.id || (tool.id === "draw" && isDrawingOpen);
 
           return (
             <button

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { floodFill } from "@/lib/floodFill";
 import {
   DEFAULT_BRUSH_SIZE,
   type DrawingTool,
@@ -110,6 +111,8 @@ export function DrawingCanvas({ onClose }: DrawingCanvasProps) {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, rect.width, rect.height);
   }, []);
 
   const clearCanvas = useCallback(() => {
@@ -203,6 +206,20 @@ export function DrawingCanvas({ onClose }: DrawingCanvasProps) {
     lastPointRef.current = target;
   }, [drawSmoothSegment]);
 
+  const floodFillAt = useCallback((point: StrokePoint) => {
+    const canvas = canvasRef.current;
+    const ctx = getContext();
+    if (!canvas || !ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const x = Math.floor(point.x * dpr);
+    const y = Math.floor(point.y * dpr);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    floodFill(imageData, x, y, strokeColorRef.current);
+    ctx.putImageData(imageData, 0, 0);
+  }, [getContext]);
+
   const finishStroke = useCallback((target: StrokePoint) => {
     const ctx = getContext();
     const lastPoint = lastPointRef.current;
@@ -255,6 +272,12 @@ export function DrawingCanvas({ onClose }: DrawingCanvasProps) {
 
       const point = getPoint(canvas, event);
 
+      if (toolRef.current === "bucket") {
+        floodFillAt(point);
+        event.preventDefault();
+        return;
+      }
+
       activePointerIdRef.current = event.pointerId;
       isDrawingRef.current = true;
       lastPointRef.current = point;
@@ -299,7 +322,7 @@ export function DrawingCanvas({ onClose }: DrawingCanvasProps) {
       canvas.removeEventListener("pointerup", endStroke);
       canvas.removeEventListener("pointercancel", endStroke);
     };
-  }, [drawDot, drawToPoint, finishStroke]);
+  }, [drawDot, drawToPoint, finishStroke, floodFillAt]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -349,13 +372,19 @@ export function DrawingCanvas({ onClose }: DrawingCanvasProps) {
         <div className={styles.canvasWrap}>
           <canvas
             ref={canvasRef}
-            className={`${styles.canvas} ${tool === "eraser" ? styles.canvasEraser : styles.canvasBrush}`}
+            className={`${styles.canvas} ${
+              tool === "eraser"
+                ? styles.canvasEraser
+                : tool === "bucket"
+                  ? styles.canvasBucket
+                  : styles.canvasBrush
+            }`}
             aria-label="Área de dibujo"
           />
         </div>
 
         <p className={styles.hint}>
-          Elige lápiz o borrador, ajusta el grosor y dibuja con mouse, lápiz táctil o dedo.
+          Usa lápiz, tarro o borrador. El tarro rellena áreas cerradas con un clic.
         </p>
       </div>
     </div>

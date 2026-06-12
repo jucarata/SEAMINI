@@ -59,6 +59,11 @@
 .toolIcon {
   width: 18px;
   height: 18px;
+  flex-shrink: 0;
+}
+
+.toolButtonActive .toolIcon {
+  color: #0f172a;
 }
 
 .sizeGroup {
@@ -99,6 +104,11 @@
   font-size: 0.75rem;
   font-weight: 600;
   color: #475569;
+}
+
+.sizeGroupDisabled {
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 .divider {
