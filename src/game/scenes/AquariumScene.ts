@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { bindFishDragControls, type FishDragController } from "../fishDrag";
 import { createFishSwimmers, updateFishSwimmers, type FishSwimmer } from "../fishSwimmers";
 
 const STAND_BASE_HEIGHT = 14;
@@ -146,12 +147,20 @@ export class AquariumScene extends Phaser.Scene {
   private layoutHeight = 0;
   private tankLayout?: TankLayout;
   private fishSwimmers: FishSwimmer[] = [];
+  private fishDragController?: FishDragController;
 
   constructor() {
     super({ key: "AquariumScene" });
   }
 
   create() {
+    this.registry.set("fishDragEnabled", true);
+    this.fishDragController = bindFishDragControls(
+      this,
+      () => this.fishSwimmers,
+      () => this.registry.get("fishDragEnabled") === true,
+    );
+
     this.scale.on("resize", this.handleResize, this);
     this.layout(this.scale.width, this.scale.height);
 
@@ -176,6 +185,8 @@ export class AquariumScene extends Phaser.Scene {
   shutdown() {
     this.scale.off("resize", this.handleResize, this);
     this.bubbleTimer?.destroy();
+    this.fishDragController?.destroy();
+    this.fishDragController = undefined;
   }
 
   private handleResize(gameSize: Phaser.Structs.Size) {
@@ -187,6 +198,7 @@ export class AquariumScene extends Phaser.Scene {
 
     this.layoutWidth = width;
     this.layoutHeight = height;
+    this.fishDragController?.reset();
     this.children.removeAll(true);
 
     const tankHeight = height - STAND_BASE_HEIGHT - STAND_FEET_HEIGHT;

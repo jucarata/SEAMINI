@@ -13,6 +13,13 @@ export function Aquarium() {
   const [isDrawingOpen, setIsDrawingOpen] = useState(false);
 
   const [fishReloadKey, setFishReloadKey] = useState(0);
+  const dragEnabledRef = useRef(true);
+
+  dragEnabledRef.current = selectedTool === "cursor" && !isDrawingOpen;
+
+  const syncFishDragEnabled = (game: Phaser.Game | null) => {
+    game?.registry.set("fishDragEnabled", dragEnabledRef.current);
+  };
 
   const handleSelectTool = (tool: Tool) => {
     if (tool === "draw") {
@@ -47,6 +54,7 @@ export function Aquarium() {
 
       gameRef.current?.destroy(true);
       gameRef.current = createAquariumGame(containerRef.current, PhaserLib);
+      syncFishDragEnabled(gameRef.current);
     })();
 
     return () => {
@@ -55,6 +63,10 @@ export function Aquarium() {
       gameRef.current = null;
     };
   }, [fishReloadKey]);
+
+  useEffect(() => {
+    syncFishDragEnabled(gameRef.current);
+  }, [selectedTool, isDrawingOpen]);
 
   return (
     <div className={styles.wrapper} aria-label="Pecera vacía">
