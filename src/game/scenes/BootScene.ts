@@ -1,4 +1,4 @@
-import { listFish, revokeFishUrls } from "@/lib/fishStore";
+import { listFish, revokeFishUrls, type StoredFish } from "@/lib/fishStore";
 import { publicPath } from "@/lib/publicPath";
 import Phaser from "phaser";
 
@@ -9,11 +9,6 @@ const GAME_ASSETS = [
   { key: "simple-seaweed-3", path: publicPath("/assets/seaweed/simple-seaweed-3.png") },
   { key: "simple-seaweed-4", path: publicPath("/assets/seaweed/simple-seaweed-4.png") },
 ] as const;
-
-type FishAsset = {
-  fileName: string;
-  url: string;
-};
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -31,7 +26,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   private async loadFishAssets() {
-    let fish: FishAsset[] = [];
+    let fish: StoredFish[] = [];
 
     try {
       fish = await listFish();
